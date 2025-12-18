@@ -1,6 +1,6 @@
 import numpy as np
 import os
-
+from zernike import RZern
 
 class DMShape:
     def __init__(self, config: dict):
@@ -48,6 +48,87 @@ class DMShape:
         self.map = np.tile(col_values, (self.N, 1))
 
     # ───────────────────────────────────────────────────────────
+    def _is_valid_zernike(self, n, m):
+        return (n >= 0 and abs(m) <= n and (n - abs(m)) % 2 == 0)
+
+    def _nm_to_k(self, n, m):
+        """
+        Convert (n, m) → Noll index (0-based).
+        """
+        m_abs = abs(m)
+        base = n * (n + 1) // 2 + 1
+
+        if m_abs == 0:
+            offset = 0
+        else:
+            k_group = (m_abs - (n % 2)) // 2
+            if n % 2 == 0:
+                offset = 2 * k_group - 1
+            else:
+                offset = 2 * k_group
+            if m < 0:
+                offset += 1
+
+        return base + offset - 1
+
+    def zernike(self, n, m, amplitude_rad, radius_actuators=None):
+        """
+        Generate a Zernike phase pattern on the DM grid.
+
+        Parameters
+        ----------
+        n, m : int
+            Zernike indices
+        amplitude_rad : float
+            Peak phase amplitude (≤ 2π)
+        radius_actuators : float
+            Radius of the Zernike disk in actuator units.
+            Defaults to full DM radius.
+        """
+
+        if not self._is_valid_zernike(n, m):
+            raise ValueError(f"Invalid Zernike indices (n={n}, m={m})")
+
+        if amplitude_rad > 2 * np.pi:
+            raise ValueError("Maximum allowed amplitude is 2π radians")
+
+        if radius_actuators is None:
+            radius_actuators = self.N / 2
+
+        # Create actuator-centered coordinate grid
+        y, x = np.indices((self.N, self.N))
+        cx = cy = (self.N - 1) / 2
+
+        X = x - cx
+        Y = y - cy
+        r = np.sqrt(X**2 + Y**2)
+
+        # Normalize to unit disk
+        Xn = X / radius_actuators
+        Yn = Y / radius_actuators
+
+        # Zernike evaluation
+        zern = RZern(n)
+        zern.make_cart_grid(Xn, Yn)
+
+        k = self._nm_to_k(n, m)
+        coeffs = np.zeros(zern.nk)
+        coeffs[k] = 1.0
+
+        phase = zern.eval_grid(coeffs, matrix=True)
+
+        # Mask outside radius
+        phase = np.where(r <= radius_actuators, phase, np.nan)
+        phase = np.nan_to_num(phase)
+
+        # Normalize to requested amplitude
+        phase = phase / np.max(np.abs(phase)) * amplitude_rad
+
+        # Map from [-A, A] → [0, 1]
+        self.map = phase / (2 * amplitude_rad) + 0.5
+
+
+    # ───────────────────────────────────────────────────────────
     def apply_circular_mask(self):
         """
         Keep values inside circular region, set outside to -1.
@@ -91,6 +172,15 @@ class DMShape:
         self.gradient(k_lambda)
         self.apply_circular_mask()
         self.unwrap_and_save()
+
+    def generate_zernike_file(self, n, m, amplitude_rad, radius_actuators=None):
+        """
+        One-call interface for Zernike DM patterns.
+        """
+        self.zernike(n, m, amplitude_rad, radius_actuators)
+        self.apply_circular_mask()
+        self.unwrap_and_save()
+
 #
 # DM = DMShape(137, 1.5e-6,514e-9)
 # DM.gradient(6)
