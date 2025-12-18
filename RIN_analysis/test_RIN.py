@@ -1,15 +1,72 @@
 
-from Spectrum_RIN_class import SpectrumRIN
+
+from Spectrum_RIN_class import plot_RIN_campaign
+from RIN_analysis_Kaizhao import plot_RIN_campaign_tdms
 
 if __name__ == "__main__":
-    rin = SpectrumRIN(r"C:\Users\kaiga\Documents\User\ETH\11.Semester JILA\PythonProject\CSV1.csv",
-                      pd_gain_dB=35,
-                      responsivity=0.22)
-    # Plot raw Trace A
-    rin.plot_trace("Trace A")
+#     campaign = {
+#         "base_folder": r"C:\Users\kaiga\Documents\User\ETH\11.Semester JILA\DM_Control\RIN_data\2025-12-15_14-00-00",
+#
+#         "global": {
+#             "responsivity_A_per_W": None,
+#             "transimpedance_V_per_A": None,
+#             "res_bandwidth_Hz": 10,
+#         },
+#
+#         "measurements": [
+#             {
+#                 "csv": "CSV1.csv",
+#                 "trace": "Trace A",
+#                 "PD_voltage_mV": 2.45 / 2 * 1e3,
+#                 "optical_power_W": None,
+#                 "label": "Background"
+#             },
+#             {
+#                 "csv": "CSV2.csv",
+#                 "trace": "Trace A",
+#                 "PD_voltage_mV": 2.45 / 2 * 1e3,
+#                 "optical_power_W": None,
+#                 "label": "DM OFF"
+#             },
+#             {
+#                 "csv": "CSV3.csv",
+#                 "trace": "Trace A",
+#                 "PD_voltage_mV": 2.52 / 2 * 1e3,
+#                 "optical_power_W": None,
+#                 "label": "DM ON"
+#             },
+#         ]
+#     }
+#
+#     plot_RIN_campaign(campaign)
 
-    # Compute RIN assuming 10 mW optical power
-    freq, RIN_dBc = rin.compute_RIN("Trace A", optical_power_mW=10)
+    campaign_tdms = {
+        "base_folder": r"C:\Users\kaiga\Documents\User\ETH\11.Semester JILA\DM_Control\RIN_data\2025-12-15_15-22-00",
 
-    # Plot RIN
-    rin.plot_RIN(freq, RIN_dBc, "Trace A")
+        "tdms_settings": {
+            "slot": "Oscilloscope (PXI1Slot7)",
+            "channel": "0",
+        },
+
+        "measurements": [
+
+            {
+                "file": "DM_OFF.tdms",
+                "V_mean_V": 2.50626,
+                "label": "DM OFF"
+            },
+            {
+                "file": "DM_ON.tdms",
+                "V_mean_V": 2.51048,
+                "label": "DM ON"
+            },
+            {
+                "file": "background.tdms",
+                "V_mean_V": 2.50626,
+                "label": "Background"
+            }
+        ]
+    }
+    plot_RIN_campaign_tdms(campaign_tdms)
+
+
