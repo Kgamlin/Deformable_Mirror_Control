@@ -77,7 +77,7 @@ def plot_RIN_campaign_tdms(campaign: dict):
 
         rin_dBc = calculate_rin_dBc_per_Hz(VHz, V_mean_V)
 
-        plt.semilogx(freq, rin_dBc, label=label)
+        plt.semilogx(freq, rin_dBc, label=label, alpha=0.7, linewidth=1.0)
 
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("RIN (dBc/Hz)")
