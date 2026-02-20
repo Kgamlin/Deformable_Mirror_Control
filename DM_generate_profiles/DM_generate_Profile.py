@@ -1,3 +1,10 @@
+import sys
+if sys.version_info < (3, 10):
+    raise RuntimeError(
+        f"This script requires Python 3.10+ — activate venv_main\n"
+        f"Current interpreter: Python {sys.version_info.major}.{sys.version_info.minor}"
+    )
+
 import numpy as np
 import os
 from zernike import RZern

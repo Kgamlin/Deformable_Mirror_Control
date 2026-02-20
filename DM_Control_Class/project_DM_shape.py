@@ -1,3 +1,10 @@
+import sys
+if sys.version_info[:2] != (3, 6):
+    raise RuntimeError(
+        f"BMC DM control requires Python 3.6 — activate venv_bmc_py36\n"
+        f"Current interpreter: Python {sys.version_info.major}.{sys.version_info.minor}"
+    )
+
 from patterns import PatternGenerator
 from dm_wrapper import DMClass
 import numpy as np
@@ -69,7 +76,7 @@ if __name__ == "__main__":
             "(1,1)" : 0,
             "(2,-2)": 0,
             "(2,0)" : 0,
-            "(2,2)" : 0,
+            "(2,2)" : 0.5,
             "(3,-3)": 0,
             "(3,-1)": 0,
             "(3,1)" : 0,
