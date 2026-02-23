@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # -----------------------------
     GRID_SIZE = 13
     SERIAL = "25CW012#060"
-    wavelength_nm = 632.8
+    wavelength_nm = 532
 
     patterns = PatternGenerator(
         N=GRID_SIZE,
@@ -71,12 +71,12 @@ if __name__ == "__main__":
             "radius_px": 5.5,
         },
         "zernike_amplitudes":{
-            "(0,0)_and_radius_px" : (0,6.5),
+            "(0,0)_and_radius_px" : (1,6.5),
             "(1,-1)": 0,
             "(1,1)" : 0,
             "(2,-2)": 0,
-            "(2,0)" : 0,
-            "(2,2)" : 0.5,
+            "(2,0)" : 0.5,
+            "(2,2)" : 0,
             "(3,-3)": 0,
             "(3,-1)": 0,
             "(3,1)" : 0,
