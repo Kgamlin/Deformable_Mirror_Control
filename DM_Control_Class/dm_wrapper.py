@@ -76,7 +76,8 @@ class DMClass:
     # ──────────────────────────────
     # Visualization
     # ──────────────────────────────
-    def plot_last(self, params: Optional[Dict] = None):
+    def plot_last(self, params=None, save_path=None):
+        # type: (Optional[Dict], Optional[str]) -> None
         if self._last_grid_masked is None:
             raise RuntimeError("No grid has been sent yet")
 
@@ -125,7 +126,74 @@ class DMClass:
         cbar.set_label("Normalized Command")
 
         plt.tight_layout()
-        plt.show()
+
+        if save_path is not None:
+            fig.savefig(save_path, dpi=150, bbox_inches="tight")
+            plt.close(fig)
+        else:
+            plt.show()
+
+    def save_pattern_data(self, save_dir, zernike_params=None, filename_stem="dm_pattern"):
+        """
+        Save DM actuator data to *save_dir*/dm_pattern/.
+
+        Files written
+        -------------
+        {filename_stem}.csv          raw actuator grid (masked cells = -1)
+        {filename_stem}.npy          same, as numpy array
+        {filename_stem}.png          actuator map plot (same style as plot_last)
+        {filename_stem}_params.json  zernike_params dict (only if provided)
+
+        Must be called after send_grid() so that _last_grid_masked is populated.
+
+        Parameters
+        ----------
+        save_dir : str or path-like
+            Parent directory.  A ``dm_pattern/`` subfolder is created inside it.
+        zernike_params : dict or None
+            Zernike parameter dict to serialise as JSON.
+        filename_stem : str
+            Base name for every saved file.
+        """
+        import json as _json
+        import os
+
+        if self._last_grid_masked is None:
+            raise RuntimeError("No grid has been sent yet — call send_grid() first.")
+
+        dm_dir = os.path.join(str(save_dir), "dm_pattern")
+        os.makedirs(dm_dir, exist_ok=True)
+
+        # CSV  (masked cells stored as -1)
+        np.savetxt(
+            os.path.join(dm_dir, filename_stem + ".csv"),
+            self._last_grid_masked,
+            delimiter=",",
+            fmt="%.6f",
+        )
+
+        # NPY
+        np.save(os.path.join(dm_dir, filename_stem + ".npy"), self._last_grid_masked)
+
+        # PNG — reuse plot_last with save_path.
+        # zernike_params can be either the raw user dict (has "zernike_amplitudes")
+        # or a scan-step wrapper (has "zernike_params" → inner dict).
+        if isinstance(zernike_params, dict):
+            if "zernike_params" in zernike_params:
+                plot_params = zernike_params["zernike_params"]   # scan-step wrapper
+            else:
+                plot_params = zernike_params                     # raw user dict
+        else:
+            plot_params = None
+        self.plot_last(
+            params=plot_params,
+            save_path=os.path.join(dm_dir, filename_stem + ".png"),
+        )
+
+        # JSON
+        if zernike_params is not None:
+            with open(os.path.join(dm_dir, filename_stem + "_params.json"), "w") as fh:
+                _json.dump(zernike_params, fh, indent=2)
 
     # ──────────────────────────────
     # Geometry
