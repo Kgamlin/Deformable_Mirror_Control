@@ -71,11 +71,11 @@ if __name__ == "__main__":
             "radius_px": 5.5,
         },
         "zernike_amplitudes":{
-            "(0,0)_and_radius_px" : (1,6.5),
+            "(0,0)_and_radius_px" : (1.5,6.5),
             "(1,-1)": 0,
             "(1,1)" : 0,
-            "(2,-2)": 0,
-            "(2,0)" : 0.5,
+            "(2,-2)": -0.1,
+            "(2,0)" :-0.00,
             "(2,2)" : 0,
             "(3,-3)": 0,
             "(3,-1)": 0,
@@ -116,6 +116,6 @@ if __name__ == "__main__":
     dm.send_grid(sup_grid_zernike)
     dm.plot_last(sup_zernike_params)
 
-    dm.close()
+    # dm.close()
 
 
