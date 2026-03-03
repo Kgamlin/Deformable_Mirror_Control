@@ -69,9 +69,10 @@ if __name__ == "__main__":
         "general":{
             "wavlength_nm": wavelength_nm,
             "radius_px": 5.5,
+            "offset_radius_px": 6.5,
         },
         "zernike_amplitudes":{
-            "(0,0)_and_radius_px" : (1.5,6.5),
+            "(0,0)": 1.5,
             "(1,-1)": 0,
             "(1,1)" : 0,
             "(2,-2)": -0.1,

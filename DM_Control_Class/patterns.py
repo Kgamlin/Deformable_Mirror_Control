@@ -178,56 +178,32 @@ class PatternGenerator:
         return cmd
 
 
-    def sup_zernike(self, zernike_superpos_params:Dict) -> np.ndarray:
+    def sup_zernike(self, zernike_superpos_params: Dict) -> np.ndarray:
         """
         Create a superposition of Zernike polynomials and return a DM command grid.
 
         The input dictionary must contain:
-            - "general": shared parameters (e.g. offset_lambda, radius_px)
-            - "zernike_amplitudes": mapping "(n,m)" -> amplitude_lambda
+            - "general": shared parameters including "radius_px" (all modes) and
+              "offset_radius_px" (used for the (0,0) piston mode only)
+            - "zernike_amplitudes": mapping "(n,m)" -> amplitude_lambda (float)
         """
         cmd = np.zeros_like(self.r_px)
-        print(zernike_superpos_params["general"])
         general_params = zernike_superpos_params["general"]
-        og_rad_px = zernike_superpos_params["general"]["radius_px"]
+        radius_px = float(general_params["radius_px"])
+        offset_radius_px = float(general_params.get("offset_radius_px", radius_px))
         zernike_amplitudes = zernike_superpos_params["zernike_amplitudes"]
 
-        for key_str, value in zernike_amplitudes.items():
-
-
-            if "_and_radius_px" in key_str:
-                # split off the suffix
-                base_key = key_str.replace("_and_radius_px", "")
-
-                # extract (n, m)
-                n, m = ast.literal_eval(base_key)
-
-                # unpack tuple value
-                amplitude, radius_px = value
-                general_params["radius_px"]=radius_px
-                kept_og_rad = False
-
-            else:
-                # normal case
-                n, m = ast.literal_eval(key_str)
-                amplitude = value
-
-                kept_og_rad = True
-
-                # print(f"n={n}, m={m}, amp={amplitude_lambda}, radius_px={radius_px}")
-            if kept_og_rad is True:
-                general_params["radius_px"] = og_rad_px
+        for key_str, amplitude in zernike_amplitudes.items():
+            n, m = ast.literal_eval(key_str)
+            r = offset_radius_px if (n == 0 and m == 0) else radius_px
             ind_params = {
                 "n": n,
                 "m": m,
                 "amplitude_lambda": amplitude,
-                **general_params
+                **general_params,
+                "radius_px": r,
             }
-            # print(ind_params)
-            cmd += self.zernike(ind_params,Check_ampl=False)
-
-            #reset the general_params radius value:
-
+            cmd += self.zernike(ind_params, Check_ampl=False)
 
         cmd = self._check_command_validity(cmd)
         return cmd
