@@ -178,7 +178,7 @@ class PatternGenerator:
         return cmd
 
 
-    def sup_zernike(self, zernike_superpos_params: Dict) -> np.ndarray:
+    def sup_zernike(self, zernike_superpos_params: Dict, clip: bool = True) -> np.ndarray:
         """
         Create a superposition of Zernike polynomials and return a DM command grid.
 
@@ -186,6 +186,14 @@ class PatternGenerator:
             - "general": shared parameters including "radius_px" (all modes) and
               "offset_radius_px" (used for the (0,0) piston mode only)
             - "zernike_amplitudes": mapping "(n,m)" -> amplitude_lambda (float)
+
+        Parameters
+        ----------
+        clip : bool
+            If True (default), apply _check_command_validity to clip the result
+            to [0, 1] and warn on out-of-range values.  Pass ``clip=False`` to
+            retrieve the raw unclipped superposition (e.g. to inspect the true
+            excursion range without modifying it).
         """
         cmd = np.zeros_like(self.r_px)
         general_params = zernike_superpos_params["general"]
@@ -205,7 +213,8 @@ class PatternGenerator:
             }
             cmd += self.zernike(ind_params, Check_ampl=False)
 
-        cmd = self._check_command_validity(cmd)
+        if clip:
+            cmd = self._check_command_validity(cmd)
         return cmd
 
 
