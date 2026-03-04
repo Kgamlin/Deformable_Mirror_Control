@@ -102,21 +102,33 @@ class DMClass:
         if params is None:
             title = "DM Actuator Map"
         else:
-            # one parameter per line for readability
-            parts = []
-            if "zernike_amplitudes" in params :
-                gen_params = params["general"]
-                for k, v in gen_params.items():
-                    parts.append(f"{k}={v}")
-                params =params["zernike_amplitudes"]
-                parts.append("\n")
+            title_lines = ["DM Actuator Map"]
 
-            for k, v in params.items():
-                if v!=0: # only when plotting the superpositions
-                    parts.append(f"{k}={v} ")#$\lambda$
-                if k == "m" or k == "amplitude_lambda":
-                    parts.append("\n")
-            title = "DM Actuator Map\n" + ", ".join(parts)
+            if "zernike_amplitudes" in params:
+                # General params — all on one line
+                gen = params.get("general", {})
+                if gen:
+                    title_lines.append(",  ".join(
+                        "{k}={v}".format(k=k, v=v) for k, v in gen.items()
+                    ))
+                amp_dict = params["zernike_amplitudes"]
+            else:
+                amp_dict = params
+
+            # Non-zero amplitudes only, rounded to 4 decimal places,
+            # wrapped at 3 entries per line so the title stays readable.
+            items_per_line = 3
+            amp_parts = []
+            for k, v in amp_dict.items():
+                if isinstance(v, (int, float)) and v != 0:
+                    amp_parts.append("{k}={v}".format(k=k, v=round(v, 4)))
+                elif not isinstance(v, (int, float)) and v:
+                    amp_parts.append("{k}={v}".format(k=k, v=v))
+
+            for i in range(0, len(amp_parts), items_per_line):
+                title_lines.append(",  ".join(amp_parts[i:i + items_per_line]))
+
+            title = "\n".join(title_lines)
 
         ax.set_title(title, fontsize=10)
         ax.set_xticks([])
@@ -137,12 +149,14 @@ class DMClass:
         """
         Save DM actuator data to *save_dir*/dm_pattern/.
 
-        Files written
-        -------------
-        {filename_stem}.csv          raw actuator grid (masked cells = -1)
-        {filename_stem}.npy          same, as numpy array
-        {filename_stem}.png          actuator map plot (same style as plot_last)
-        {filename_stem}_params.json  zernike_params dict (only if provided)
+        Layout
+        ------
+        dm_pattern/
+            {filename_stem}.csv          raw actuator grid (masked cells = -1)
+            plots/
+                {filename_stem}.png      actuator map plot
+            params/
+                {filename_stem}_params.json   zernike_params dict (if provided)
 
         Must be called after send_grid() so that _last_grid_masked is populated.
 
@@ -161,8 +175,12 @@ class DMClass:
         if self._last_grid_masked is None:
             raise RuntimeError("No grid has been sent yet — call send_grid() first.")
 
-        dm_dir = os.path.join(str(save_dir), "dm_pattern")
+        dm_dir    = os.path.join(str(save_dir), "dm_pattern")
+        plots_dir = os.path.join(dm_dir, "plots")
+        params_dir = os.path.join(dm_dir, "params")
         os.makedirs(dm_dir, exist_ok=True)
+        os.makedirs(plots_dir, exist_ok=True)
+        os.makedirs(params_dir, exist_ok=True)
 
         # CSV  (masked cells stored as -1)
         np.savetxt(
@@ -171,9 +189,6 @@ class DMClass:
             delimiter=",",
             fmt="%.6f",
         )
-
-        # NPY
-        np.save(os.path.join(dm_dir, filename_stem + ".npy"), self._last_grid_masked)
 
         # PNG — reuse plot_last with save_path.
         # zernike_params can be either the raw user dict (has "zernike_amplitudes")
@@ -187,12 +202,12 @@ class DMClass:
             plot_params = None
         self.plot_last(
             params=plot_params,
-            save_path=os.path.join(dm_dir, filename_stem + ".png"),
+            save_path=os.path.join(plots_dir, filename_stem + ".png"),
         )
 
         # JSON
         if zernike_params is not None:
-            with open(os.path.join(dm_dir, filename_stem + "_params.json"), "w") as fh:
+            with open(os.path.join(params_dir, filename_stem + "_params.json"), "w") as fh:
                 _json.dump(zernike_params, fh, indent=2)
 
     # ──────────────────────────────
